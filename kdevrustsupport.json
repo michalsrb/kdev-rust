@@ -1,0 +1,40 @@
+{
+    "KPlugin": {
+        "Category": "Language Support",
+        "Icon": "text-x-qml",
+        "Id": "kdevrust",
+        "License": "GPL",
+        "Name": "Rust Support",
+        "Name[ca@valencia]": "Implementació del Rust",
+        "Name[ca]": "Implementació del Rust",
+        "Name[cs]": "Podpora Rust",
+        "Name[de]": "Unterstützung für Rust",
+        "Name[en_GB]": "Rust Support",
+        "Name[es]": "Implementación de Rust",
+        "Name[fi]": "Rust-tuki",
+        "Name[gl]": "Compatibilidade con Rust",
+        "Name[nl]": "Ondersteuning voor Rust",
+        "Name[pl]": "Obsługa Rust",
+        "Name[pt]": "Suporte para Rust",
+        "Name[pt_BR]": "Suporte à Rust",
+        "Name[sk]": "Podpora Rust",
+        "Name[sl]": "Podpora za Rust",
+        "Name[sv]": "Rust-stöd",
+        "Name[uk]": "Підтримка Rust",
+        "Name[x-test]": "xxRust Supportxx",
+        "Name[zh_CN]": "Rust 支持",
+        "ServiceTypes": [
+            "KDevelop/Plugin"
+        ]
+    },
+    "X-KDevelop-Interfaces": [
+        "ILanguageSupport"
+    ],
+    "X-KDevelop-Language": "Rust",
+    "X-KDevelop-Mode": "NoGUI",
+    "X-KDevelop-SupportedMimeTypes": [
+        "text/rust"
+    ],
+
+    "X-KDevelop-Version": 24
+}

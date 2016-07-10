@@ -1,0 +1,5 @@
+File=rustconfig.kcfg
+ClassName=RustConfig
+Singleton=true
+Inherits=RustConfigSkeleton
+IncludeFiles="rustsettings/rustconfigskeleton.h"

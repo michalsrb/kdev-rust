@@ -28,10 +28,10 @@
 #include <language/duchain/functiondeclaration.h>
 #include <language/duchain/types/abstracttype.h>
 #include <language/duchain/types/delayedtype.h>
-#include <language/duchain/types/functiontype.h>
 #include <language/duchain/types/structuretype.h>
 
 #include "types/rustarraytype.h"
+#include "types/rustfunctiontype.h"
 #include "types/rustintegraltype.h"
 #include "types/rustpointertype.h"
 #include "types/rustreferencetype.h"
@@ -174,7 +174,7 @@ void Builder::buildType(TypeKind kind, DefId defId, uint32_t size) {
 
         case TypeKind::Function:
         {
-            FunctionType *function_type = new FunctionType();
+            RustFunctionType *function_type = new RustFunctionType();
             for (uint32_t i = 0; i < size; i++) {
                 function_type->addArgument(popType(), 0);
             }

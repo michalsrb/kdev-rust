@@ -27,13 +27,13 @@
 #include <language/duchain/declaration.h>
 #include <language/duchain/functiondeclaration.h>
 #include <language/duchain/types/abstracttype.h>
-#include <language/duchain/types/arraytype.h>
 #include <language/duchain/types/delayedtype.h>
 #include <language/duchain/types/functiontype.h>
 #include <language/duchain/types/pointertype.h>
 #include <language/duchain/types/referencetype.h>
 #include <language/duchain/types/structuretype.h>
 
+#include "types/rustarraytype.h"
 #include "types/rustintegraltype.h"
 #include "types/rusttupletype.h"
 
@@ -115,7 +115,7 @@ void Builder::buildType(TypeKind kind, DefId defId, uint32_t size) {
 
         case TypeKind::Array:
         {
-            ArrayType *array_type = new ArrayType();
+            RustArrayType *array_type = new RustArrayType();
             array_type->setElementType(popType());
             array_type->setDimension(size);
             type = array_type;

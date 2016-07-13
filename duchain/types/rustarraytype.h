@@ -21,16 +21,61 @@
 
 #include <language/duchain/types/arraytype.h>
 
+#include "kdevrustduchain_export.h"
+
 
 namespace Rust {
 
-// TODO: Finnish this to be used for rust-like array printing
-class RustArrayType : public KDevelop::ArrayType
+typedef KDevelop::ArrayTypeData RustArrayTypeData;
+
+/*
+ * Custom ArrayType so we can override toString for Rust-like format of arrays.
+ * TODO: Is there easier way to use standard type with different printing?
+ */
+class KDEVRUSTDUCHAIN_EXPORT RustArrayType : public KDevelop::ArrayType
 {
 public:
+    typedef KDevelop::TypePtr<RustArrayType> Ptr;
 
-    virtual QString toString() const override;
+    /// Default constructor
+    RustArrayType();
+    /// Copy constructor. \param rhs type to copy
+    RustArrayType(const RustArrayType& rhs);
+    /// Constructor using raw data. \param data internal data.
+    RustArrayType(RustArrayTypeData& data);
+
+    virtual KDevelop::AbstractType* clone() const;
+
+    virtual QString toString() const;
+
+    // Inheriting equals and hash from ArrayType
+
+    enum {
+        ///TODO: is that value OK?
+        Identity = 81
+    };
+
+    typedef KDevelop::ArrayTypeData Data;
+    typedef KDevelop::ArrayType BaseType;
+
+protected:
+    TYPE_DECLARE_DATA(RustArrayType);
 };
+
+}
+
+
+namespace KDevelop
+{
+
+template<>
+inline Rust::RustArrayType* fastCast<Rust::RustArrayType*>(AbstractType* from) {
+    if (!from || from->whichType() != AbstractType::TypeArray) {
+        return 0;
+    } else {
+        return dynamic_cast<Rust::RustArrayType*>(from);
+    }
+}
 
 }
 

@@ -1,6 +1,7 @@
 add_library(kdevrustduchain STATIC
     builder.cpp
 
+    types/rustarraytype.cpp
     types/rustintegraltype.cpp
     types/rusttupletype.cpp
 )

@@ -18,15 +18,41 @@
 
 #include "rustarraytype.h"
 
+#include <language/duchain/types/typeregister.h>
+
+using namespace KDevelop;
+
 namespace Rust {
 
-// TODO: Finnish this to be used for rust-like array printing
+REGISTER_TYPE(RustArrayType);
+
+RustArrayType::RustArrayType()
+  : ArrayType(createData<RustArrayType>())
+{
+}
+
+RustArrayType::RustArrayType(const RustArrayType& rhs)
+  : ArrayType(copyData<RustArrayType>(*rhs.d_func()))
+{
+}
+
+RustArrayType::RustArrayType(RustArrayTypeData& data)
+  : ArrayType(data)
+{
+}
+
 QString RustArrayType::toString() const
 {
-//   if (d_func()->m_dimension == 0) {
-//     return QStringLiteral("%1[]").arg(elementType() ? elementType()->toString() : QStringLiteral("<notype>"));
-//   }
-//   return QStringLiteral("%1[%2]").arg(elementType() ? elementType()->toString() : QStringLiteral("<notype>")).arg(d_func()->m_dimension);
+  if (dimension() == 0) {
+    return QStringLiteral("[%1]").arg(elementType() ? elementType()->toString() : QStringLiteral("<notype>"));
+  }
+  return QStringLiteral("[%1; %2]").arg(elementType() ? elementType()->toString() : QStringLiteral("<notype>")).arg(dimension());
+}
+
+
+KDevelop::AbstractType* RustArrayType::clone() const
+{
+    return new RustArrayType(*this);
 }
 
 }

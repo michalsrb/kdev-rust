@@ -47,6 +47,10 @@ You should see this file installed to your system (the exact path may vary):
 /usr/lib64/qt5/plugins/kdevplatform/24/kdevrustlanguagesupport.so
 ```
 
+## Linux packages
+
+I am going regularly package kdev-rust in OpenSUSE Build Service. You may find package for your distribution in there: [Search kdev-rust at build.opensuse.org](https://build.opensuse.org/search?search_text=kdev-rust).
+
 # Configuration
 
 In KDevelop navigate to *Settings -> Configure KDevelop -> Plugins* and enable *Rust Support* plugin.

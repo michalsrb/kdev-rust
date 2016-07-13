@@ -29,12 +29,12 @@
 #include <language/duchain/types/abstracttype.h>
 #include <language/duchain/types/delayedtype.h>
 #include <language/duchain/types/functiontype.h>
-#include <language/duchain/types/pointertype.h>
-#include <language/duchain/types/referencetype.h>
 #include <language/duchain/types/structuretype.h>
 
 #include "types/rustarraytype.h"
 #include "types/rustintegraltype.h"
+#include "types/rustpointertype.h"
+#include "types/rustreferencetype.h"
 #include "types/rusttupletype.h"
 
 #include "builder.h"
@@ -125,7 +125,7 @@ void Builder::buildType(TypeKind kind, DefId defId, uint32_t size) {
 
         case TypeKind::Ref:
         {
-            ReferenceType *reference_type = new ReferenceType();
+            RustReferenceType *reference_type = new RustReferenceType();
             reference_type->setBaseType(popType());
             type = reference_type;
 
@@ -134,7 +134,7 @@ void Builder::buildType(TypeKind kind, DefId defId, uint32_t size) {
 
         case TypeKind::RawPtr:
         {
-            PointerType *reference_type = new PointerType();
+            RustPointerType *reference_type = new RustPointerType();
             reference_type->setBaseType(popType());
             type = reference_type;
 

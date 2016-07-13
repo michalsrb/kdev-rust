@@ -41,16 +41,58 @@ RustPointerType::RustPointerType(RustPointerTypeData& data)
 {
 }
 
-QString RustPointerType::toString() const
+PointerKind RustPointerType::kind() const
 {
-  QString baseString = (baseType() ? baseType()->toString() : QStringLiteral("<notype>"));
-  return QStringLiteral("*%1").arg(baseString) + AbstractType::toString(true);
+    return d_func()->m_kind;
 }
 
+void RustPointerType::setKind(PointerKind kind)
+{
+    d_func_dynamic()->m_kind = kind;
+}
 
 KDevelop::AbstractType* RustPointerType::clone() const
 {
     return new RustPointerType(*this);
 }
+
+QString RustPointerType::toString() const
+{
+    QString baseString = (baseType() ? baseType()->toString() : QStringLiteral("<notype>"));
+
+    switch (d_func()->m_kind) {
+    case PointerKind::Box:
+        return QStringLiteral("Box<%1>").arg(baseString) + AbstractType::toString(true);
+
+    case PointerKind::Raw:
+    default:
+        return QStringLiteral("*%1").arg(baseString) + AbstractType::toString(true);
+    }
+}
+
+bool RustPointerType::equals(const AbstractType* rhs) const
+{
+    if (this == rhs) {
+        return true;
+    }
+
+    if (!PointerType::equals(rhs)) {
+        return false;
+    }
+
+    const RustPointerType* c = dynamic_cast<const RustPointerType*>(rhs);
+    if (!c) {
+        return false;
+    }
+
+    return c->kind() == c->kind();
+}
+
+uint RustPointerType::hash() const
+{
+    return PointerType::hash() + (uint)kind(); // May not be the best way of extending the hash
+}
+
+
 
 }

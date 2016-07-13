@@ -20,18 +20,35 @@
 #define RUSTPOINTERTYPE_H
 
 #include <language/duchain/types/pointertype.h>
+#include <language/duchain/types/typesystemdata.h>
 
 #include "kdevrustduchain_export.h"
 
 
 namespace Rust {
 
-typedef KDevelop::PointerTypeData RustPointerTypeData;
+enum PointerKind {
+    Raw,
+    Box
+};
 
-/*
- * Custom PointerType so we can override toString for Rust-like format of pointers.
- * TODO: Is there easier way to use standard type with different printing?
- */
+class KDEVRUSTDUCHAIN_EXPORT RustPointerTypeData : public KDevelop::PointerTypeData
+{
+public:
+    /// Constructor
+    RustPointerTypeData() : KDevelop::PointerTypeData() {
+        m_kind = PointerKind::Raw;
+    }
+
+    /// Copy constructor. \param rhs data to copy
+    RustPointerTypeData(const RustPointerTypeData& rhs) : KDevelop::PointerTypeData(rhs) {
+        m_kind = rhs.m_kind;
+    }
+
+    /// Pointer type
+    PointerKind m_kind;
+};
+
 class KDEVRUSTDUCHAIN_EXPORT RustPointerType : public KDevelop::PointerType
 {
 public:
@@ -44,18 +61,24 @@ public:
     /// Constructor using raw data. \param data internal data.
     RustPointerType(RustPointerTypeData& data);
 
+    PointerKind kind() const;
+
+    void setKind(PointerKind kind);
+
     virtual KDevelop::AbstractType* clone() const;
 
     virtual QString toString() const;
 
-    // Inheriting equals and hash from PointerType
+    virtual bool equals(const AbstractType* rhs) const override;
+
+    virtual uint hash() const override;
 
     enum {
         ///TODO: is that value OK?
         Identity = 82
     };
 
-    typedef KDevelop::PointerTypeData Data;
+    typedef RustPointerTypeData Data;
     typedef KDevelop::PointerType BaseType;
 
 protected:

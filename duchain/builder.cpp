@@ -134,9 +134,20 @@ void Builder::buildType(TypeKind kind, DefId defId, uint32_t size) {
 
         case TypeKind::RawPtr:
         {
-            RustPointerType *reference_type = new RustPointerType();
-            reference_type->setBaseType(popType());
-            type = reference_type;
+            RustPointerType *pointer_type = new RustPointerType();
+            pointer_type->setBaseType(popType());
+            pointer_type->setKind(PointerKind::Raw);
+            type = pointer_type;
+
+            break;
+        }
+
+        case TypeKind::BoxPtr:
+        {
+            RustPointerType *pointer_type = new RustPointerType();
+            pointer_type->setBaseType(popType());
+            pointer_type->setKind(PointerKind::Box);
+            type = pointer_type;
 
             break;
         }

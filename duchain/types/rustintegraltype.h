@@ -70,8 +70,7 @@ public:
    };
    
     enum {
-        ///TODO: is that value OK?
-        Identity = 79
+        Identity = 203
     };
     
     typedef KDevelop::IntegralTypeData Data;

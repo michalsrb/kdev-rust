@@ -51,8 +51,7 @@ public:
     // Inheriting equals and hash from ReferenceType
 
     enum {
-        ///TODO: is that value OK?
-        Identity = 83
+        Identity = 205
     };
 
     typedef KDevelop::ReferenceTypeData Data;

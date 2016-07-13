@@ -80,7 +80,7 @@ public:
     virtual bool equals(const AbstractType* rhs) const;
 
     enum {
-        Identity = 80
+        Identity = 206
     };
 
     typedef RustTupleTypeData Data;

@@ -51,8 +51,7 @@ public:
     // Inheriting equals and hash from ArrayType
 
     enum {
-        ///TODO: is that value OK?
-        Identity = 81
+        Identity = 201
     };
 
     typedef KDevelop::ArrayTypeData Data;

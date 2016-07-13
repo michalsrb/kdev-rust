@@ -74,8 +74,7 @@ public:
     virtual uint hash() const override;
 
     enum {
-        ///TODO: is that value OK?
-        Identity = 82
+        Identity = 204
     };
 
     typedef RustPointerTypeData Data;

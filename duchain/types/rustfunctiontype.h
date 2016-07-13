@@ -51,8 +51,7 @@ public:
     // Inheriting equals and hash from FunctionType
 
     enum {
-        ///TODO: is that value OK?
-        Identity = 84
+        Identity = 202
     };
 
     typedef KDevelop::FunctionTypeData Data;

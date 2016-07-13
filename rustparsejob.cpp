@@ -37,6 +37,7 @@
 #include <language/duchain/types/referencetype.h>
 #include <language/duchain/types/structuretype.h>
 #include <interfaces/icore.h>
+#include <interfaces/idocumentcontroller.h>
 #include <interfaces/ilanguagecontroller.h>
 #include <interfaces/iuicontroller.h>
 #include <language/backgroundparser/backgroundparser.h>
@@ -154,11 +155,15 @@ void ParseJob::run(ThreadWeaver::JobPointer /*self*/, ThreadWeaver::Thread */*th
     try {
         ProcessDataStream dataStream(process);
 
-        // Copy the content of the open file
-        // TODO: Put in all open files with modifications
-        dataStream.writeUint8(MessageOut::SetFile);
-        dataStream.writeIndexedString(document());
-        dataStream.writeByteArray(contents().contents);
+        // Copy the content of the open rs files
+        foreach(auto document, ICore::self()->documentController()->openDocuments()) {
+            auto textDocument = document->textDocument();
+            if (textDocument && textDocument->isModified() && textDocument->url().isLocalFile() && textDocument->mimeType() == "text/rust") {
+                dataStream.writeUint8(MessageOut::SetFile);
+                dataStream.writeString(textDocument->url().toLocalFile());
+                dataStream.writeString(textDocument->text());
+            }
+        }
 
         // Run the analysis
         dataStream.writeUint8(MessageOut::Analyze);

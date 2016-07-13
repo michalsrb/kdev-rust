@@ -25,10 +25,11 @@
 #include <language/duchain/duchainutils.h>
 #include <language/duchain/topducontext.h>
 #include <language/duchain/declaration.h>
-#include <language/duchain/functiondeclaration.h>
 #include <language/duchain/types/abstracttype.h>
 #include <language/duchain/types/delayedtype.h>
 #include <language/duchain/types/structuretype.h>
+
+#include "declarations/rustfunctiondeclaration.h"
 
 #include "types/rustarraytype.h"
 #include "types/rustfunctiontype.h"
@@ -223,7 +224,7 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
             break;
 
         case DeclarationKind::Function:
-            newDeclaration = new FunctionDeclaration(span, m_contextStack.top());
+            newDeclaration = new RustFunctionDeclaration(span, m_contextStack.top());
             newDeclaration->setKind(Declaration::Kind::Instance);
             break;
 

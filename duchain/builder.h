@@ -47,8 +47,10 @@ typedef quint64 DefId;
 enum class DeclarationKind : quint8 {
     Instance = 0,
     Function = 1,
-    Type = 2,
-    Namespace = 3
+    Type = 2, // TODO: Replace with specific ones?
+    Namespace = 3,
+    Struct = 4,
+    Trait = 5
 };
 
 enum class ContextKind : quint8 {

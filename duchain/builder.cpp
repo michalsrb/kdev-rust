@@ -25,6 +25,7 @@
 #include <language/duchain/duchainutils.h>
 #include <language/duchain/topducontext.h>
 #include <language/duchain/declaration.h>
+#include <language/duchain/classdeclaration.h>
 #include <language/duchain/types/abstracttype.h>
 #include <language/duchain/types/delayedtype.h>
 #include <language/duchain/types/structuretype.h>
@@ -237,6 +238,24 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
             newDeclaration = new Declaration(span, m_contextStack.top());
             newDeclaration->setKind(Declaration::Kind::Namespace);
             break;
+
+        case DeclarationKind::Struct:
+        {
+            ClassDeclaration *classDeclaration = new ClassDeclaration(span, m_contextStack.top());
+            classDeclaration->setKind(Declaration::Kind::Type);
+            classDeclaration->setClassType(ClassDeclarationData::ClassType::Struct);
+            newDeclaration = classDeclaration;
+            break;
+        }
+
+        case DeclarationKind::Trait:
+        {
+            ClassDeclaration *classDeclaration = new ClassDeclaration(span, m_contextStack.top());
+            classDeclaration->setKind(Declaration::Kind::Type);
+            classDeclaration->setClassType(ClassDeclarationData::ClassType::Trait);
+            newDeclaration = classDeclaration;
+            break;
+        }
 
         default:
             qWarning() << "Unknown declaration type " << (int) kind;

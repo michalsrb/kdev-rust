@@ -253,6 +253,8 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
             ClassDeclaration *classDeclaration = new ClassDeclaration(span, m_contextStack.top());
             classDeclaration->setKind(Declaration::Kind::Type);
             classDeclaration->setClassType(ClassDeclarationData::ClassType::Trait);
+            classDeclaration->setClassModifier(ClassDeclarationData::ClassModifier::Abstract);
+
             newDeclaration = classDeclaration;
             break;
         }
@@ -267,6 +269,13 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
     declaration->setIdentifier(Identifier(name));
 
     declaration->setDeclarationIsDefinition(isDefinition);
+
+    if (kind == DeclarationKind::Trait) {
+        // Note: Create a StructureType for the trait declaration. This will be removed once traits have actual types assigned to them.
+        StructureType::Ptr struct_type = StructureType::Ptr(new StructureType());
+        struct_type->setDeclaration(newDeclaration);
+        static_cast<ClassDeclaration*>(newDeclaration)->setAbstractType(struct_type);
+    }
 
     if (useLastType) {
         declaration->setAbstractType(popType());

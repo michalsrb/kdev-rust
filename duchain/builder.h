@@ -22,6 +22,7 @@
 #include <QtCore/QMap>
 #include <QtCore/QMultiMap>
 #include <QtCore/QPair>
+#include <QtCore/QStack>
 #include <QtCore/QString>
 
 #include <language/duchain/types/identifiedtype.h>

@@ -105,20 +105,24 @@ void ParseJob::run(ThreadWeaver::JobPointer /*self*/, ThreadWeaver::Thread */*th
 
     QUrl documentUrl = document().toUrl();
 
-    ReferencedTopDUContext topDUContext = DUChainUtils::standardContextForUrl(documentUrl);
+    ReferencedTopDUContext topDUContext;
+    {
+        DUChainReadLocker duchainlock(DUChain::lock());
+        topDUContext = DUChainUtils::standardContextForUrl(documentUrl);
+    }
+
+    bool update = false;
 
     if (topDUContext) {
-        // XXX: Never updating, always recreating from scratch. So clean the old one.
-        // XXX: Not sure what exactly should I delete and what not. It seems like creating fresh ducontext would be better, but every way I tried was causing problems.
-
-        topDUContext->clearImportedParentContexts();
+        KDevelop::DUChainWriteLocker locker;
         topDUContext->clearProblems();
-        topDUContext->deleteChildContextsRecursively();
-        topDUContext->deleteLocalDeclarations();
         topDUContext->deleteUsesRecursively();
 
         translateDUChainToRevision(topDUContext);
+
+        update = true;
     } else {
+        DUChainReadLocker duchainlock(DUChain::lock());
         ParsingEnvironmentFile *file = new ParsingEnvironmentFile(document()); // TODO: This should be probably set up more
         file->setLanguage(rustLangString);
         topDUContext = new TopDUContext(document(), RangeInRevision(0, 0, INT_MAX, INT_MAX), file);
@@ -219,7 +223,7 @@ void ParseJob::run(ThreadWeaver::JobPointer /*self*/, ThreadWeaver::Thread */*th
             // TODO: Should it be more granual?
             KDevelop::DUChainWriteLocker locker;
 
-            Builder builder(topDUContext);
+            Builder builder(topDUContext, update);
             while(dispatchMessage(dataStream, builder));
         }
 
@@ -236,6 +240,9 @@ void ParseJob::run(ThreadWeaver::JobPointer /*self*/, ThreadWeaver::Thread */*th
     topDUContext->setFeatures(TopDUContext::Features::AllDeclarationsContextsAndUses); // ?
 
     setDuChain(topDUContext);
+
+    DUChain::self()->emitUpdateReady(document(), topDUContext);
+
     highlightDUChain();
 }
 

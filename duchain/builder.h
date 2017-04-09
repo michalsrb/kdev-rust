@@ -19,14 +19,18 @@
 #ifndef BUILDER_H
 #define BUILDER_H
 
+#include <stack>
+
 #include <QtCore/QMap>
 #include <QtCore/QMultiMap>
 #include <QtCore/QPair>
 #include <QtCore/QStack>
 #include <QtCore/QString>
+#include <QtCore/QVector>
 
 #include <language/duchain/types/identifiedtype.h>
 
+#include <language/duchain/declaration.h>
 #include <language/duchain/duchainlock.h>
 #include <language/duchain/topducontext.h>
 
@@ -88,8 +92,28 @@ enum class TypeKind : quint8 {
 
 class Builder
 {
+private:
+    struct CurrentContext
+    {
+        CurrentContext(KDevelop::DUContext* context);
+
+        CurrentContext(const CurrentContext& other) = delete;
+        CurrentContext(CurrentContext&& other);
+
+        ~CurrentContext();
+
+        KDevelop::DUContext* context;
+        // when updating, this contains child contexts of the current parent context
+        QVector<KDevelop::DUContext*> previousChildContexts;
+        // when updating, this contains child declarations of the current parent context
+        QVector<KDevelop::Declaration*> previousChildDeclarations;
+
+        bool resortChildContexts = false;
+        bool resortLocalDeclarations = false;
+    };
+
 public:
-    Builder(KDevelop::ReferencedTopDUContext topDUContext);
+    Builder(KDevelop::ReferencedTopDUContext topDUContext, bool update);
 
     void buildType(TypeKind kind, DefId defId, quint32 size);
     void buildDeclaration(DeclarationKind kind, DefId defId, const KDevelop::IndexedString &name, const KDevelop::RangeInRevision &span, bool isDefinition, bool useLastType);
@@ -103,6 +127,31 @@ public:
 private:
     KDevelop::AbstractType::Ptr popType();
 
+    template <class T>
+    KDevelop::Declaration *createDeclaration(const KDevelop::RangeInRevision &range, const KDevelop::Identifier &identifier) {
+        auto &parentContext = m_contextStack.top();
+
+        if (m_update) {
+            const KDevelop::IndexedIdentifier indexed_identifier(identifier);
+            for (auto it = parentContext.previousChildDeclarations.begin(); it != parentContext.previousChildDeclarations.end(); ++it) {
+                KDevelop::Declaration *decl = dynamic_cast<T*>(*it);
+                if (!decl || decl->indexedIdentifier() != indexed_identifier)
+                    continue;
+
+                decl->setRange(range);
+                parentContext.resortLocalDeclarations = true;
+                parentContext.previousChildDeclarations.erase(it);
+                return decl;
+            }
+        }
+
+        KDevelop::Declaration *decl = new T(range, parentContext.context);
+        decl->setIdentifier(identifier);
+        return decl;
+    }
+
+    KDevelop::DUContext *createContext(const KDevelop::RangeInRevision &range, KDevelop::DUContext::ContextType type, const KDevelop::QualifiedIdentifier& scopeId);
+
 private:
     QStack<KDevelop::AbstractType::Ptr> m_typeStack;
 
@@ -112,7 +161,9 @@ private:
     KDevelop::DeclarationPointer m_lastDeclaration;
 
     KDevelop::ReferencedTopDUContext m_topDUContext;
-    QStack<KDevelop::DUContext*> m_contextStack;
+    std::stack<CurrentContext> m_contextStack;
+
+    bool m_update;
 };
 
 }

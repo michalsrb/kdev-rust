@@ -47,11 +47,44 @@ using namespace KDevelop;
 namespace Rust
 {
 
-
-Builder::Builder(KDevelop::ReferencedTopDUContext topDUContext)
+Builder::CurrentContext::CurrentContext(KDevelop::DUContext* context/*, QSet<KDevelop::DUContext*> keepAliveContexts*/)
+    : context(context)
 {
-    m_topDUContext = topDUContext;
-    m_contextStack.push(m_topDUContext);
+    DUChainReadLocker lock;
+    previousChildContexts = context->childContexts();
+    previousChildDeclarations = context->localDeclarations();
+}
+
+Builder::CurrentContext::CurrentContext(CurrentContext&& other)
+{
+    context = other.context;
+    previousChildContexts = std::move(other.previousChildContexts);
+    previousChildDeclarations = std::move(other.previousChildDeclarations);
+    resortChildContexts = other.resortChildContexts;
+    resortLocalDeclarations = other.resortLocalDeclarations;
+
+    other.context = nullptr;
+}
+
+Builder::CurrentContext::~CurrentContext()
+{
+    DUChainWriteLocker lock;
+    foreach (auto childContext, previousChildContexts) {
+        delete childContext;
+    }
+    qDeleteAll(previousChildDeclarations);
+    if (resortChildContexts) {
+        context->resortChildContexts();
+    }
+    if (resortLocalDeclarations) {
+        context->resortLocalDeclarations();
+    }
+}
+
+Builder::Builder(KDevelop::ReferencedTopDUContext topDUContext, bool update)
+ : m_topDUContext(topDUContext), m_update(update)
+{
+    m_contextStack.push(CurrentContext(m_topDUContext.data()));
 }
 
 AbstractType::Ptr Builder::popType()
@@ -218,30 +251,33 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
 
     Declaration *newDeclaration;
 
+    // TODO: Maybe buildDeclaration should get Identifier directly?
+    const Identifier identifier(name);
+
     switch (kind) {
         case DeclarationKind::Instance:
-            newDeclaration = new Declaration(span, m_contextStack.top());
+            newDeclaration = createDeclaration<Declaration>(span, identifier);
             newDeclaration->setKind(Declaration::Kind::Instance);
             break;
 
         case DeclarationKind::Function:
-            newDeclaration = new RustFunctionDeclaration(span, m_contextStack.top());
+            newDeclaration = createDeclaration<RustFunctionDeclaration>(span, identifier);
             newDeclaration->setKind(Declaration::Kind::Instance);
             break;
 
         case DeclarationKind::Type:
-            newDeclaration = new Declaration(span, m_contextStack.top());
+            newDeclaration = createDeclaration<Declaration>(span, identifier);
             newDeclaration->setKind(Declaration::Kind::Type);
             break;
 
         case DeclarationKind::Namespace:
-            newDeclaration = new Declaration(span, m_contextStack.top());
+            newDeclaration = createDeclaration<Declaration>(span, identifier);
             newDeclaration->setKind(Declaration::Kind::Namespace);
             break;
 
         case DeclarationKind::Struct:
         {
-            ClassDeclaration *classDeclaration = new ClassDeclaration(span, m_contextStack.top());
+            ClassDeclaration *classDeclaration = static_cast<ClassDeclaration*>(createDeclaration<ClassDeclaration>(span, identifier));
             classDeclaration->setKind(Declaration::Kind::Type);
             classDeclaration->setClassType(ClassDeclarationData::ClassType::Struct);
             newDeclaration = classDeclaration;
@@ -250,7 +286,7 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
 
         case DeclarationKind::Trait:
         {
-            ClassDeclaration *classDeclaration = new ClassDeclaration(span, m_contextStack.top());
+            ClassDeclaration *classDeclaration = static_cast<ClassDeclaration*>(createDeclaration<ClassDeclaration>(span, identifier));
             classDeclaration->setKind(Declaration::Kind::Type);
             classDeclaration->setClassType(ClassDeclarationData::ClassType::Trait);
             classDeclaration->setClassModifier(ClassDeclarationData::ClassModifier::Abstract);
@@ -265,8 +301,6 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
     }
 
     DeclarationPointer declaration(newDeclaration);
-
-    declaration->setIdentifier(Identifier(name));
 
     declaration->setDeclarationIsDefinition(isDefinition);
 
@@ -298,6 +332,28 @@ void Builder::buildDeclaration(DeclarationKind kind, DefId defId, const IndexedS
     m_lastDeclaration = declaration;
 }
 
+DUContext *Builder::createContext(const RangeInRevision &range, DUContext::ContextType type, const QualifiedIdentifier& scopeId) {
+    auto &parentContext = m_contextStack.top();
+
+    if (m_update) {
+            const IndexedQualifiedIdentifier indexedScopeId(scopeId);
+            for (auto it = parentContext.previousChildContexts.begin(); it != parentContext.previousChildContexts.end(); ++it) {
+                auto ctx = *it;
+                if (ctx->type() == type && ctx->indexedLocalScopeIdentifier() == indexedScopeId) {
+                    ctx->setRange(range);
+                    parentContext.resortChildContexts = true;
+                    parentContext.previousChildContexts.erase(it);
+                    return ctx;
+                }
+            }
+    }
+
+    DUContext *context = new DUContext(range, parentContext.context);
+    context->setType(type);
+    context->setLocalScopeIdentifier(scopeId);
+    return context;
+}
+
 void Builder::openContext(Rust::ContextKind kind, const QString name, const RangeInRevision &span, bool belongsToLastDeclaration)
 {
     qWarning() << "Builder::openContext("
@@ -306,26 +362,26 @@ void Builder::openContext(Rust::ContextKind kind, const QString name, const Rang
         << ", belongsToLastDeclaration:" << belongsToLastDeclaration
         << ")";
 
-    DUContext *context = new DUContext(span, m_contextStack.top());
+    QualifiedIdentifier scopeId = name.isEmpty() ? QualifiedIdentifier() : QualifiedIdentifier(name);
 
-    if (!name.isEmpty())
-        context->setLocalScopeIdentifier(QualifiedIdentifier(name));
+    DUContext *context;
 
     switch(kind) {
         case ContextKind::Namespace:
-            context->setType(DUContext::ContextType::Namespace);
+            context = createContext(span, DUContext::ContextType::Namespace, scopeId);
             break;
         case ContextKind::Class:
-            context->setType(DUContext::ContextType::Class);
+            context = createContext(span, DUContext::ContextType::Class, scopeId);
             break;
         case ContextKind::Function:
-            context->setType(DUContext::ContextType::Function);
+            context = createContext(span, DUContext::ContextType::Function, scopeId);
             break;
         case ContextKind::Other:
-            context->setType(DUContext::ContextType::Other);
+            context = createContext(span, DUContext::ContextType::Other, scopeId);
             break;
         default:
             qWarning() << "Unknown context type " << (int) kind;
+            context = createContext(span, DUContext::ContextType::Other, scopeId);
             break;
     }
 
@@ -357,9 +413,9 @@ void Builder::buildUse(DefId defId, const KDevelop::RangeInRevision &span)
     auto declaration = m_declarationMap.find(defId);
 
     if (declaration != m_declarationMap.end()) {
-        m_contextStack.top()->createUse(m_topDUContext->indexForUsedDeclaration(declaration->data()), span);
+        m_contextStack.top().context->createUse(m_topDUContext->indexForUsedDeclaration(declaration->data()), span);
     } else {
-        m_usesMissingDeclaration.insert(defId, qMakePair(m_contextStack.top(), span));
+        m_usesMissingDeclaration.insert(defId, qMakePair(m_contextStack.top().context, span));
     }
 }
 
